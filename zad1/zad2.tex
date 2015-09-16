@@ -1,0 +1,252 @@
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[oneside]{book}
+\usepackage{polski}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb} 
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage[svgnames, table]{xcolor} % Required to specify font color
+
+\usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+
+% do tabel
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tabularx,ragged2e,booktabs,caption}
+\newcolumntype{C}[1]{>{\Centering}m{#1}}
+\renewcommand\tabularxcolumn[1]{C{#1}}
+\renewcommand{\listalgorithmname}{List of \ALG@name s}
+
+
+
+\makeatletter 
+\makeatother
+
+\newcommand*{\plogo}{\fbox{$\mathcal{PL}$}} % Generic publisher logo
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\newcommand*{\titleTH}{\begingroup % Create the command for including the title page in the document
+\raggedleft % Right-align all text
+\vspace*{\baselineskip} % Whitespace at the top of the page
+
+{\Large Konrad Lisiecki 291649}\\[0.167\textheight] % Author name 
+
+{\LARGE\bfseries Zadanie 1 - Algorytm Szymańskiego}\\[\baselineskip] % First part of the title, if it is unimportant consider making the font size smaller to accentuate the main title
+
+{\textcolor{Red}{\Huge Programowanie współbieżne i Rozproszone}}\\[\baselineskip] % Main title which draws the focus of the reader
+
+{\Large \textit{Semestr letni 2013/14  }}\par % Tagline or further description
+
+\vfill % Whitespace between the title block and the publisher
+
+{\large  Warszawa, 2014-03-17}\par % Publisher and logo
+\renewcommand{\chaptername}{Podpunkt}
+
+\vspace*{3\baselineskip} % Whitespace at the bottom of the page
+\endgroup}
+
+
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+%----------------------------------------------------------------------------------------
+%	BLANK DOCUMENT
+%----------------------------------------------------------------------------------------
+
+\begin{document} 
+
+\pagestyle{empty} % Removes page numbers
+	
+
+\titleTH % This command includes the title page
+
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+%\chapter*{Wprowadzenie}
+%\addcontentsline{toc}{chapter}{Wprowadzenie}
+
+\chapter{Sumaryczne wyniki przedstawione w postaci tabeli}
+\paragraph{Własności algorytmów} Czy odpowiedni wariant algorytmu Szymańskiego ma daną własność:
+
+\begin{table}[H]                                                                                                                                                             
+  \begin{tabularx}{\textwidth}{| l | R | R | R | R | R | R | R |}                                                      
+   \hline                                                                            \input{dane} \hline
+   \end{tabularx}                                                                
+  \caption{Własności wariantów algorytmu Szymańskiego}                 
+ \end{table}        
+
+
+
+\chapter{Sprawdzenie własności protokołu}
+
+
+Celem zadania jest zaimplementowanie Algorytmu Szymańskiego, który pozwala na zachowanie wzajemnego wykluczania dla więcej niż $2$ procesów. Po zaimplementowaniu algorytmu można, za pomocą logiki $LTL$, sprawdzać wiele ciekawych własności dotyczących przebiegu wykonania procesów. Wśród nich możemy wyróżnić:
+\begin{enumerate}
+\item Wzajemne wykluczanie
+\item Nieunikniona poczekalnia
+\item Wyjście z poczekalni
+\item Żywotność
+\item Liniowy czas oczekiwania
+\end{enumerate}
+W kolejnych podpunktach rozdziału przyjrzymy się bliżej tym własnościom.
+
+ 
+
+\section{Wzajemne wykluczanie} - program \textbf{MA} własność wzajemnego wykluczania. (w całym tekście, gdy program ma jakąś własność sprawdzamy to przez przejście i sprawdzenie wszystkich możliwych stanów). Formuła logiki $LTL$ wygląda w następujący sposób:
+
+
+
+% Wzajemne wykluczanie
+
+ \begin{algorithm}[H]                                                            
+   \caption{Wzajemne Wykluczanie}\label{euclid}
+   \begin{algorithmic}[1]                                                         
+     \State $ltl \; sk \; { \square (counter < 2)}$\Comment{Formuła LTL dla wzajemnego wykluczania} 
+  \end{algorithmic}                                                             
+\end{algorithm}   
+
+
+
+% Nieunikniona poczekalnia
+
+\section{Nieunikniona poczekalnia} (każde wejście do sekcji krytycznej procesu i poprzedzone jest przez stan o własności we[i] \&\& !chce[i]) - program \textbf{NIE MA} własności nieuniknionej poczekalni. Formuła logki LTL wygląda następująco:
+ \begin{algorithm}[H]                                                            
+   \caption{Nieunikniona poczekalnia}\label{euclid}
+   \begin{algorithmic}[1]                                                         
+     \State $ltl \; np \; { \square (P[1]@sk \rightarrow nieunikniona\_poczekalnia[1])} $\Comment{Formuła LTL dla nieuniknionej poczekalni} 
+  \end{algorithmic}                                                             
+\end{algorithm} 
+
+\paragraph{Komentarz do braku nieuniknionej poczekalni:}
+Kiedy mamy tylko jeden proces, który chce wejść do sekcji krytycznej, to wchodzi tam nie przechodząc przez poczekalnię.
+
+
+
+
+
+
+% Wyjście z poczekalni
+
+\section{Wyjście z poczekalni} (jeśli któryś z procesów i ma własność we[i] \&\& !chce[i], to w końcu któryś z pozostałych procesów j będzie miał własność wy[j]) - program \textbf{MA} własność wyjścia z poczekalni. Formuła logiki LTL wygląda jak poniżej:
+
+
+
+ \begin{algorithm}[H]                                                            
+   \caption{Wyjście z poczekalni}\label{euclid}
+   \begin{algorithmic}[1]                                                         
+     \State $ltl \;wyj\; { \square (nieunikniona\_poczekalnia[0] \rightarrow \lozenge P[1]@tutaj\; || \;\lozenge P[2]@tutaj \;|| \; \lozenge P[3]@tutaj)    } $\Comment{Formuła LTL dla wyjścia z poczekalni} 
+  \end{algorithmic}                                                             
+\end{algorithm} 
+
+
+
+
+% Żywotnosc
+
+
+\section{Żywotność}
+Program \textbf{NIE MA} własności żywotności. Formuła logiki LTL wygląda jak poniżej:
+\begin{algorithm}[H]                                                            
+   \caption{Żywotność}\label{euclid}
+   \begin{algorithmic}[1]                                                         
+     \State $ltl \; zyw \; { \square (P[i]@przed\_pocz \rightarrow \lozenge P[i]@sk) }  $\Comment{Formuła LTL dla żywotności} 
+  \end{algorithmic}                                                             
+\end{algorithm} 
+
+
+\paragraph{Komentarz do braku żywotności:}
+Rozpatrzmy następujący scenariusz: Załóżmy, że procesy $3$ i $4$ nie wyrażając chęci znalezienia się w sekcji krytycznej. W pewnym momencie proces $1$ wykonuje cały przebieg algorytmu i zatrzymuje się dokładnie przed przypisaniem $chce[i]=false$ (instrukcja ta ma numer 16). Następnie procesor otrzymuje proces $2$ i musi znaleźć się w poczekalni. Kolejno następuje przełączenie kontekstu, proces $1$ kończy protokół końcowy i nie wyraża już zainteresowania znalezieniem się w sekcji krytycznej (pętli się we fragmencie własne sprawy). W ten sposób proces $2$ nigdy nie wejdzie do sekcji krytycznej.
+
+
+
+% Liniowy czas oczekiwania
+
+\section{Liniowy czas oczekiwania} (podczas gdy jakiś proces czeka, żaden inny proces nie może wejść do sekcji krytycznej więcej niż stałą liczbę razy)- program \textbf{MA} własność liniowości czasu oczekiwania. Formuła LTL została wyrażona się jak poniżej:
+ \begin{algorithm}[H]                                                            
+   \caption{Liniowy czas oczekiwania}\label{euclid}
+   \begin{algorithmic}[1]                                                         
+     \State $ltl \; lco \; {\square(licznik[0] \leq N) }  $\Comment{Formuła LTL dla liniowego czasu oczekiwania} 
+  \end{algorithmic}                                                             
+\end{algorithm} 
+ 
+ \paragraph{Komentarz do tablicy licznik:} Tablica licznik trzyma liczbę procesów, które weszły do sekcji krytycznej podczas oczekiwania przez dany proces.
+
+
+
+
+\chapter{Odporność własności algorytmu na zmianę kolejności przypisań}
+
+W celu sprawdzenia jak zachowują się poszczególne wersje algorytmu najpierw sprawdzałem jakie będą wyniki w przypadku gdy omawiane trzy istrukcje programu zostaną wykonane atomowo:
+ \begin{algorithm}[H]                                                            
+   \caption{Atmomowe wykonanie $3$ ostatnich instrukcji programu}\label{euclid}
+   \begin{algorithmic}[1]                                                          
+            \State atomic                                                              
+           \State $\{$                                                                   
+                \State  \hspace{\algorithmicindent} wy[i] = false;                                                  
+                \State \hspace{\algorithmicindent} we[i] = false;                                                  
+                 \State \hspace{\algorithmicindent} chce[i] = false;  
+				\State$\}$
+				
+				  \end{algorithmic}                                                             
+\end{algorithm}   
+
+Po wprowadzeniu atomowości okazało się, że algorytm zyskał jedną własność, której poprzednio, nie miał, a mianowicie żywotność:
+
+\begin{table}[H]                                                                                                                                                             
+\centering
+  \begin{tabular}{| l |r |}                                                      
+   \hline                                                                            \input{liveliness} \hline
+   \end{tabular}                                                                
+  \caption{Własności wariantów algorytmu Szymańskiego dla zatomizowanych ostatnich instrukcji}                 
+ \end{table} 
+ 
+Z tego wynika, że musi istnieć inna kolejność wykonań, taka, że zajdzie własność żywotności. Okazało się, że permutacja $(14,16,15)$ zapewnia tę własność. Co więcej, wynikiem sprawdzenia pozostałych własności są 2 obserwacje:
+\begin{enumerate}
+\item Permutacja $(14,16,15)$ spełnia wszystkie własności oprócz nieuniknionej
+poczekalni. Oznacza to, że jest lepszym wariantem algotymu od tego, który był
+pierwotnie w zadaniu. Permutacja te spełnia własność, ponieważ przypisanie $chce[i] = false$ odbywa się przed przypisaniem $we[i] = false$. Wtedy to inny proces sprawdzający warunek na ominięcie poczekalni (druga pętla) otrzyma "zgode" na przejście od razu za poczekalnie.
+\item Pozostałe permutacje (tzn. takie, dla których $14$ instrukcja nie jest początkową) nie spełniają żadnych instrukcj, włączając w to własność wzajemnego wykluczania.
+\end{enumerate}
+
+Wyniki analizay zostały przedstawione w poniższej tabeli:
+
+\begin{table}[H]                                                                                                                                                             
+\centering
+  \begin{tabularx}{\textwidth}{| l | R | R | R | R | R | R |}                                                      
+   \hline                                                                            \input{perm} \hline
+   \end{tabularx}                                                                
+  \caption{Własności wariantów algorytmu Szymańskiego dla poszczególnych permutacji ostatnich $3$ instrukcji.}                 
+ \end{table} 
+
+
+
+
+
+\chapter{Możliwość "awarii" procesów, a własności algorytmu - pkt 5}
+W przypadku gdy istnieje możliwość awarii procesu, proces kończy swój normalny bieg i wraca do początku swojego wykonania. W przypadku zmodyfikowania modelu, jak w punkcie $4$ zadania, algortym nie spełnia żadnych z własności, włącznie ze wzajemnym wykluczaniem. Po zaimplementowaniu tej części, postanowiłem odpowidnio zmodyfikować algorytm (zgodnie z załączonym artykułem o tym algorytmie). Po zmianie udało się uzyskać własność wzajmengo wykluczania. Implementacja znajduje się w pliku $prot2.pml$.\\
+
+ 
+\begin{table}[H]                                                                                                                                                             
+\centering
+  \begin{tabular}{| l |r |}                                                      
+   \hline                                                                            \input{breakdown} \hline
+   \end{tabular}                                                                
+  \caption{Własności algorytmu z możliwością "awarii".}                 
+ \end{table} 
+
+\paragraph{Własności algorymu z awariami} Jak zostało wspomniane wzajemne wykluczanie jest spełnione, natomiast pozostałe nie są spełnione. Jeśli chodzi o nieuniknioną poczekalnię i żywotność, to argumenty dlaczego własności te nie są spełnione są takie same jak w rozdziale drugim (bo może się zdarzyć, że procesy się nigdy nie będą psuły - czyli możemy powiedzieć, że oryginalny algorytm Szymańskiego jest szczególnym przypadkiem jego wersji z awariami). Jeżeli chodzi o własność trzecią (wyjście z poczekalni) to sprawa wydaje się oczywista, gdy uwzględnimy to, że procesy są podatne na awarie. Z tego wynika, że może zaistnieć sytuacja, kiedy procesy będą się "psuć" przed przypisaniem $wy[i] = true$ (instrukcja 13). Również dla liniowego czasu oczekiwania weryfikacja wykazała, że ta własność nie jest spełniona.
+
+\end{document}

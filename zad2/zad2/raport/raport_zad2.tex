@@ -1,0 +1,196 @@
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[oneside]{book} 
+\usepackage{polski}
+\usepackage{graphicx}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb} 
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\usepackage[svgnames, table]{xcolor} % Required to specify font color
+
+\usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+
+% do tabel
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tabularx,ragged2e,booktabs,caption}
+\newcolumntype{C}[1]{>{\Centering}m{#1}}
+\renewcommand\tabularxcolumn[1]{C{#1}}
+\renewcommand{\listalgorithmname}{List of \ALG@name s}
+
+
+
+\makeatletter
+\makeatother
+
+\newcommand*{\plogo}{\fbox{$\mathcal{PL}$}} % Generic publisher logo
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\newcommand*{\titleTH}{\begingroup % Create the command for including the title page in the document
+\raggedleft % Right-align all text
+\vspace*{\baselineskip} % Whitespace at the top of the page
+
+{\Large Konrad Lisiecki 291649}\\[0.167\textheight] % Author name 
+
+{\LARGE\bfseries Zadanie 2 - Algorytm Brandesa}\\[\baselineskip] % First part of the title, if it is unimportant consider making the font size smaller to accentuate the main title
+
+{\textcolor{Red}{\Huge Programowanie współbieżne i Rozproszone}}\\[\baselineskip] % Main title which draws the focus of the reader
+
+{\Large \textit{Semestr letni 2013/14  }}\par % Tagline or further description
+
+\vfill % Whitespace between the title block and the publisher
+
+{\large  Warszawa, 2014-04-27}\par % Publisher and logo
+\renewcommand{\chaptername}{Podpunkt}
+
+\vspace*{3\baselineskip} % Whitespace at the bottom of the page
+\endgroup}
+
+
+\newcolumntype{R}{>{\raggedleft\arraybackslash}X}
+%----------------------------------------------------------------------------------------
+%	BLANK DOCUMENT
+%----------------------------------------------------------------------------------------
+
+\begin{document} 
+
+\pagestyle{empty} % Removes page numbers
+	
+
+\titleTH % This command includes the title page
+
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+
+%\chapter*{Wprowadzenie}
+%\addcontentsline{toc}{chapter}{Wprowadzenie}
+
+\chapter{Wprowadzenie}
+\paragraph{Algorytm Brandesa} 
+
+Celem zadania jest zaimplementowanie Algorytmu Brandesa. Algorytm ten jest używany w zagadnieniach związanych z analizą sieci, a dokładniej rzecz ujmując, z identyfikacją ważnych wierzchołków w sieciach. Może on być stosowany do wyszukiwania istotnych elementów w sieciach nieważonych, tzn. takich dla których nie przypisujemy wag dla połączenia dwóch danych składników sieci. Jest to istotne założenie, ponieważ dzięki temu algorytm brandesa osiąga znacznie lepszą złożoność obliczeniową ($O|V||E|$) w porównaniu do najszybszych
+algorytmów działających na sieciach ważonych ($O |V|^3$ dla alg. Floyda-Warshalla). Jednak mimo tego ograniczenia algorytm Brandesa świetnie najdaje się do analizy wielu powszechnie występujących sieci, jak np. sieci społecznościowych.
+
+
+\paragraph{Użyte jednostki obliczeniowe} Przedstawiony powyżej algorym został zaimplementowany na dwóch jednostkach obliczeniowych, mianowicie na procesorze graficznym GPU i procesorze jednostki centralnej CPU. Dla implementacji na GPU zostanie użyta technologia OpenCL. 
+
+\paragraph{Struktura pracy} Na początku zostanie przedstawiony schemat algorytmu na GPU wraz z wyszczególnionymi kernelami. Następnie, przejdę do sposobu w jaki budowałem algorytm i jakie stosowałem optymalizacje w poszczególnych krokach. Po tym nastąpi porównanie otrzymanych wyników na GPU i CPU dla różnych grafów wejściwoych. Na samym końcu zostanie przedstawiona tabela z dokładnymi wynikami. 
+
+
+
+
+
+
+\chapter{Schemat algorytmu na GPU}
+
+\paragraph{Kernele} Aby przenieść algorytm z CPU na GPU należy stworzyć kilka kerneli obliczeniowych. Są one uruchamiane sekwencyjnie dla każdego wierzchołka (wirtualnego) grafu. Zostały zaimplementowane następujące kernele:
+\begin{enumerate}
+\item InitArray - inicjalizuje tablice
+\item Forward - wykonuje fazę forward algorytmu
+\item Middle - wypełnienie tablicy delta
+\item Backward - wykonanie fazy backward algorytmu
+\item Final - uaktualnienie tablicy wynikowej
+\end{enumerate} 
+
+Schemat algorytmu wygląda następująco:
+ \begin{algorithm}[H]                                                            
+   \caption{Schemat algorytmu z wyszczególnieniem użytych kerneli}\label{euclid}
+   \begin{algorithmic}[1]
+     \ForAll{$u \in V$}             
+     \Comment{Dla każdego wierzchołka w grafie} 
+     \State $\text{run Initarray(u)}$
+     \State $\text{run Forward}$
+     \State $\text{run Middle}$
+     \State $\text{run Backward}$
+     \State $\text{run Result(v)}$
+     \EndFor                                            
+  \end{algorithmic}                                                             
+\end{algorithm} 
+
+\paragraph{Maksymalna liczba sąsiadów wierzchołka}
+Ponadto w algorytmie doświadczalnie wyznaczono maksymalną liczbę sąsiadów dla implementacji z wirtualnymi wierzchołkami. Liczba ta wynosi 32.
+
+
+\chapter{Optymalizacje szybkości działania algorytmu oraz GPU}
+
+\paragraph{Kroki podjęte podczas implementacji algorytmu} Poniższe zestawienie zawiera najważniejsze kroki podjęte podczas implementacji i optymalizacji algorytmu:
+
+\begin{enumerate}
+\item Implementacja bazowej wersji algorytmu na CPU
+\item Przeniesienie algorytmu z CPU na GPU
+\item Redukcja liczby kerneli
+\item Próba skompresowania grafu 
+\item Implementacja wersji rozszerzonej algorytmu (o wirtualne wierzchołki) na CPU
+\item Dodanie do bazowego algortymu na GPU wirtualnych wierzchołków (zauważenie, że wierzchołki o dużej liczbie sąsiadów spowalniają działanie algorytmu, stąd znaczne przyspieszenie działania)
+\item Dostrajanie algorytmu przy pomocy zmiany maksymalnej liczby sąsiadów dla danego wierzchołka
+\item Końcowe optymalizcjie na GPU, np. cachowanie wartości globalnych w pętlach występujacych w kernelach (aby zmniejszyć liczbę odwołań do pamięci)
+\end{enumerate}
+
+
+\chapter{Porównanie wyników implementacji algorytmu na GPU i CPU}
+\paragraph{GPU vs. CPU} W niniejszym rozdziale zostaną przedstawione wyniki z wykonania testów dla obydwu implementacji algorytmu. Testy te były wykonywane na karcie graficznej wspierającej technologię OpenCL \textbf{nVidia gtx 660}. Jest to karta graficzna gwarantująca przyspieszenie w stosunku do karty graficznej dostępnej na serwerach \textbf{nvidia1} oraz \textbf{nvidia2} rzędu \textbf{1,5-2x} (czas wykonania algorymtu Brandesa dla tej karty na danych \textbf{Facebook Small} to 3.669s, natomiast na kartach serwerów nvidia to 7.132s). Z kolei testy na układzie CPU zostały wykonane na procesorze \textbf{Intel Core i5-3230M}. Jest to procesor o częstotliwości taktowania zegara rzędu \textbf{2.60GHz-3.20GHz}.
+
+\paragraph{Wyniki algorytmu na danych średniej wielkości} Na rysunku nr 4.1 został przedstawiony wykres porównujący czasy wykonania algorytmów dla obu platform obliczeniowych. Wynika z nich, że algorytm działa od 4 do 8 razy szybciej na karcie graficznej \textbf{nVidia gtx 660} (dla kart kraficznych na serwerze wydziałowym \textbf{nvidia} oznacza to przyspieszenie 2-4 krotne).
+
+
+
+\begin{figure}[H]
+  \centering
+ % \framebox{\vbox to 4cm{\vfil\hbox to
+ %     7cm{\hfil\tiny.\hfil}\vfil}}
+  \includegraphics[width=15cm]{midium.png}
+  \caption{Porównanie szybkości algorytmu Brandesa na GPU i CPU dla średnich grafów}
+\end{figure}
+
+
+
+\paragraph{Wyniki algorytmu na danych dużej wielkości} Z kolei na obrazku nr 4.2 przedstawiono wykres porównujący czasy wykonania algorytmów dla obu platform obliczeniowych, ale tym razem na dużych grafach wejściowych. Z przeprowadzonych testów wynika, że dla takich dancyh uzyskano przyspieszenie około 10-krotne. Obrazek został przedstawiony poniżej: 
+\begin{figure}[H]
+  \centering
+ % \framebox{\vbox to 4cm{\vfil\hbox to
+ %     7cm{\hfil\tiny.\hfil}\vfil}}
+  \includegraphics[width=\textwidth]{large.png}
+  \caption{Porównanie szybkości algorytmu Brandesa na GPU i CPU dla dużych grafów}
+\end{figure}
+
+
+
+\chapter{Tabela z wynikami}
+
+\paragraph{Tabela z czasami} Poniższa tabela przedstawia czasy (w sekundach), jakie osiągnięto podczas przeprowadzania testów na algorytmie Brandesa:
+
+\begin{table}[H]
+
+ \begin{tabularx}{\textwidth}{ l | r }                                                      
+  \hline                                                                            \input{dane}                                                         \hline                                                                          
+  \end{tabularx}   
+ \caption{Porównanie wyników algorytmu Brandesa na poszczególnych grafach}
+\end{table}
+
+\paragraph{Pliki z danymi wejściowymi}	Wszystkie powyższe testy będą dostępne do 30 czerwca 2014 roku na stronie internetowej  http://students.mimuw.edu.pl/\textasciitilde kl291649/pwir 
+
+\chapter{Zawartość rozwiązania}
+\paragraph{Pliki z kodami źródłowymi} Dołączony do opracowania folder z kodami źródłowymi zawiera:
+\begin{enumerate}
+\item Wersję algorytmu na GPU z zaimplementowanymi wirtualnymi wierzchołkami (pliki brandes*)
+\item Wersję algorytmu na CPU z zaimplementowanymi wirtualnymi wierzchołkami (pliki cpubrandes*)
+\item Raport z wyniki w formaci PDF
+\item Plik Makefile
+\end{enumerate}
+
+
+
+\end{document}
